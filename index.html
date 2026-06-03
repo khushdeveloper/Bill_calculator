@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Milk Bill Calculator</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f2f2f2;
+    padding:10px;
+}
+
+.container{
+    max-width:600px;
+    margin:auto;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:15px;
+}
+
+.input-box{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:10px;
+}
+
+label{
+    display:block;
+    margin-bottom:5px;
+    font-weight:bold;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:16px;
+}
+
+.days-container{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+    margin-top:10px;
+}
+
+.day-card{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:8px;
+    border-radius:8px;
+    border:1px solid #ddd;
+
+    background:white;
+    min-height:42px;
+}
+
+.day-number{
+    font-weight:bold;
+    width:20px;
+}
+
+.controls{
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.arrow{
+    border:none;
+    background:none;
+    font-size:20px;
+    cursor:pointer;
+    font-weight:bold;
+    width:24px;
+}
+
+.qty{
+    min-width:35px;
+    text-align:center;
+    font-weight:bold;
+}
+
+.normal{
+    background:white;
+}
+
+.modified{
+    background:#ffd699;
+}
+
+.zero{
+    background:#ff9999;
+}
+
+.summary{
+    position:sticky;
+    bottom:0;
+
+    background:white;
+    margin-top:15px;
+    padding:15px;
+
+    border-radius:10px;
+    box-shadow:0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.summary p{
+    margin:5px 0;
+    font-weight:bold;
+}
+
+.bill{
+    color:green;
+    font-size:20px;
+}
+
+@media(max-width:480px){
+
+    .days-container{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .day-card{
+        padding:6px;
+    }
+
+    .arrow{
+        font-size:18px;
+    }
+
+    .qty{
+        min-width:30px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>🥛 Milk Bill Calculator</h2>
+
+    <div class="input-box">
+
+        <label>Milk Price (₹)</label>
+        <input
+            type="number"
+            id="price"
+            placeholder="Enter Price"
+            oninput="calculateTotals()">
+
+        <br><br>
+
+        <label>Select Month</label>
+        <input
+            type="month"
+            id="month"
+            onchange="generateDays()">
+
+    </div>
+
+    <div id="daysContainer" class="days-container"></div>
+
+    <div class="summary">
+
+        <p>Total Liter:
+            <span id="totalLiter">0</span>
+        </p>
+
+        <p>Price/Liter:
+            ₹<span id="priceDisplay">0</span>
+        </p>
+
+        <p class="bill">
+            Total Bill:
+            ₹<span id="totalBill">0</span>
+        </p>
+
+    </div>
+
+</div>
+
+<script>
+
+function generateDays(){
+
+    const monthValue =
+        document.getElementById("month").value;
+
+    if(!monthValue) return;
+
+    const [year, month] =
+        monthValue.split("-");
+
+    const daysInMonth =
+        new Date(year, month, 0).getDate();
+
+    const container =
+        document.getElementById("daysContainer");
+
+    container.innerHTML = "";
+
+    let leftDays = Math.ceil(daysInMonth / 2);
+
+    for(let i = 1; i <= leftDays; i++){
+
+        createDay(container, i);
+
+        let rightDay = i + leftDays;
+
+        if(rightDay <= daysInMonth){
+            createDay(container, rightDay);
+        }
+    }
+
+    calculateTotals();
+}
+
+function createDay(container, day){
+
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "day-card normal";
+
+    card.innerHTML = `
+        <span class="day-number">${day}</span>
+
+        <div class="controls">
+
+            <button
+                class="arrow"
+                onclick="changeQty(this,-0.5)">
+                ◀
+            </button>
+
+            <span class="qty">1.0</span>
+
+            <button
+                class="arrow"
+                onclick="changeQty(this,0.5)">
+                ▶
+            </button>
+
+        </div>
+    `;
+
+    container.appendChild(card);
+}
+
+function changeQty(btn, change){
+
+    const card =
+        btn.closest(".day-card");
+
+    const qtyElement =
+        card.querySelector(".qty");
+
+    let value =
+        parseFloat(qtyElement.innerText);
+
+    value += change;
+
+    if(value < 0){
+        value = 0;
+    }
+
+    qtyElement.innerText =
+        value.toFixed(1);
+
+    updateColor(card, value);
+
+    calculateTotals();
+}
+
+function updateColor(card, value){
+
+    card.classList.remove(
+        "normal",
+        "modified",
+        "zero"
+    );
+
+    if(value === 1){
+
+        card.classList.add("normal");
+
+    }
+    else if(value === 0){
+
+        card.classList.add("zero");
+
+    }
+    else{
+
+        card.classList.add("modified");
+
+    }
+}
+
+function calculateTotals(){
+
+    let totalLiter = 0;
+
+    document
+        .querySelectorAll(".qty")
+        .forEach(qty => {
+
+            totalLiter +=
+                parseFloat(qty.innerText);
+
+        });
+
+    let price =
+        parseFloat(
+            document.getElementById("price").value
+        );
+
+    if(isNaN(price)){
+        price = 0;
+    }
+
+    let bill =
+        totalLiter * price;
+
+    document.getElementById(
+        "totalLiter"
+    ).innerText =
+        totalLiter.toFixed(1);
+
+    document.getElementById(
+        "priceDisplay"
+    ).innerText =
+        price.toFixed(2);
+
+    document.getElementById(
+        "totalBill"
+    ).innerText =
+        bill.toFixed(2);
+}
+
+</script>
+
+</body>
+</html>
